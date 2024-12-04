@@ -1,0 +1,338 @@
+<!-- 
+********************************************************************************************
+* NAME : GenericChangeOwnerLwc
+* DESCRIPTION: This LWC component allows for searching, displaying, and updating the owner of records in Salesforce.
+* It provides functionality for both individual and bulk record owner changes. Users can select records,
+* search for records based on object types, and assign a new owner to selected records or in bulk.
+* @AUTHOR ASJAD AHMED
+* MODIFICATION LOG:
+* DEVELOPER DATE DESCRIPTION
+* ----------------------------------------------------------------------------
+* ASJAD AHMED 05.10.2024 Initial creation of the component with basic functionalities.
+-->
+<template>
+    <div class="slds-theme_default slds-p-around_small " style="border-radius: 5px; min-height: 100vh;">
+        
+        <div class="slds-theme_shade slds-p-bottom_large" style="border-radius: 10px; border: 1px solid #ccc; min-height: 98vh;">
+            <div class="slds-box slds-theme_default slds-m-horizontal_large slds-p-vertical_medium slds-m-top_large slds-m-bottom_large" style="border-radius: 10px; border: 1px solid #ccc; height: 100%">
+                <div >
+                    <div class="slds-grid">
+                        <div class="slds-size_6-of-12">
+                            <table style="width: auto;">
+                                <tr>
+                                    <td><lightning-icon icon-name="standard:document_reference" size="large" ></lightning-icon></td>
+                                    <td style="width: auto; padding-left: 6px; color:#54698D; padding-top:13px;" class="slds-text-heading_large"><span>Assign Bulk Owner</span></td>	
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+            <div class="slds-theme_default slds-m-horizontal_large" style="border-radius: 10px; border: 1px solid #ccc;">
+                <lightning-tabset active-tab-value={currentTab}>
+                    <!-- TAB Select records to assign !-->
+                    <lightning-tab label="Select records" title="2nd tab extended title" value="select-records" onactive={handleActiveTab}>
+                        <div class="slds-m-horizontal_medium" style="min-height: 50vh;">
+                            <div class="slds-grid ">
+                                <div class=" slds-size_12-of-12 slds-p-horizontal_small" style="display: flex;  justify-content: left; gap: 5px;">
+                                    <div style="padding: 10px; width: 30%" >
+                                        <div class="slds-box  neumorphism-card slds-theme_default slds-p-vertical_large slds-m-bottom_small " style="background-color: #f9f9f9;border-radius:10px" >
+                                            <table style="width: auto;">
+                                                <tr>
+                                                    <td style="width: auto;" class="slds-text-heading_medium"><span class="slds-text-color_error">*</span>User</td>
+                                                    <td><lightning-helptext class="slds-p-bottom_medium" content="Assotiated user of the records you want to see."></lightning-helptext></td>
+                                                </tr>
+                                            </table>
+                                            <div class="slds-grid slds-p-top_small" >
+                                                <div class="slds-size_11-of-12 neumorphism-card">
+                                                    <lightning-record-picker data-index={index}
+                                                        label="User"
+                                                        onchange={onUserChange}
+                                                        object-api-name="User"
+                                                        class="validate-input"
+                                                        variant="label-hidden"
+                                                        >
+                                                    </lightning-record-picker>
+                                                </div>
+                                                <div class="slds-size_1-of-12"></div>   
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <template if:true={showObjectField}>
+                                        <div style="padding: 10px; width: 30%" >
+                                            <div class="slds-box  neumorphism-card slds-theme_default slds-p-vertical_large slds-m-bottom_small " style="background-color: #f9f9f9;border-radius:10px" >
+                                                <table style="width: auto;">
+                                                    <tr>
+                                                        <td style="width: auto;" class="slds-text-heading_medium"><span class="slds-text-color_error">*</span>Object</td>
+                                                        <td><lightning-helptext class="slds-p-bottom_medium" content="Object from which records will come."></lightning-helptext></td>
+                                                    </tr>
+                                                </table>
+                                                <div class="slds-grid slds-p-top_small" >
+                                                    <div class="slds-size_11-of-12 neumorphism-card">
+                                                        <lightning-combobox
+                                                            name="sObjectDropdown"
+                                                            label="Select an Account"
+                                                            variant="label-hidden"
+                                                            placeholder="Select Objects"
+                                                            options={objectOptions}
+                                                            onchange={handleObjectChange}>
+                                                        </lightning-combobox>
+                                                        <!-- <c-searchable-picklist-lwc data-id="searchablePicklist" label="Object" variant="label-hidden" onobjectselected={handleObjectChange} object-options={lstObjectPicklist}></c-searchable-picklist-lwc> -->
+                                                    </div>
+                                                    <div class="slds-size_1-of-12"></div>   
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    
+                                </div>
+                            </div>
+                            <template if:true={hasInitialized}>
+                                <div class="slds-page-header" style="flex-shrink: 0;">
+                                    <div class="slds-page-header__row">
+                                        <div class="slds-page-header__col-title">
+                                            <div class="slds-media">
+                                                <div class="slds-media__figure">
+                                                    <span class="slds-icon_container slds-icon-standard-opportunity">
+                                                        <lightning-icon icon-name="standard:sobject_collection" size="large" title="object_icon"></lightning-icon>
+                                                    </span>
+                                                </div>
+                                                <div class="slds-media__body">
+                                                    <div class="slds-page-header__name">
+                                                        <div class="slds-page-header__name-title">
+                                                            <h1>
+                                                                <span class="slds-page-header__title slds-truncate slds-p-top_xx-small slds-text-heading_large" style="padding-top: 7px;" title="Recently Viewed">{objectLabel}</span>
+                                                            </h1>
+                                                        </div>
+                                                    </div>
+                                                </div>
+        
+                                                <lightning-input type="search"  placeholder="Search..." onkeypress={handleInTableSearch}></lightning-input>
+                                                <template if:true={showAssignToUserTab}>
+                                                    <div style="padding-top: 19px;padding-left: 25px;">
+                                                            <lightning-button variant="brand" label="Next" onclick={handleNext}></lightning-button>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Dynamic Table -->
+                                 <div style="overflow-y: scroll; overflow-x: scroll; max-height: 70vh">
+                                    <table class="slds-scrollable slds-table slds-table_cell-buffer slds-table_bordered" style="width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <!-- COLUMN Checkbox !-->
+                                                <th style="text-align:center; width:3%" scope="col">
+                                                    <lightning-input type="checkbox" checked={allChecked} onchange={handleCheckboxAllSelection}></lightning-input>
+                                                </th>
+            
+                                                <!-- COLUMN Serial number !-->
+                                                <th style="text-align:center; width:3%" scope="col"><strong>#</strong></th>
+            
+                                                <template for:each={tableColumns} for:item="col" for:index="index">
+                                                    <th key={col} style="text-align:left" scope="col">{col}</th>
+                                                </template>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template for:each={tableData} for:item="row" for:index="index">
+                                                <tr key={row.Id}>
+                                                    <!-- COLUMN Checkbox !-->
+                                                    <td style="text-align:center; width:3%">
+                                                        <lightning-input  value={row.id} data-index={index} checked={row.checked} type="checkbox" onchange={handleCheckboxSelection}></lightning-input>
+                                                    </td>
+            
+                                                    <!-- COLUMN Serial number !-->
+                                                    <td style="text-align:center; width:3%">{row.serialNumber}</td>
+            
+                                                    <!--
+                                                    <td style="text-align:center" data-index={index2}>
+                                                            <span style="text-align:center;" class="slds-text-heading_small">{row.id}</span>
+                                                    </td>
+                                                    !-->
+            
+                                                    <template for:each={row.fields} for:item="data" for:index="index2" >
+                                                        <td key={data.keyIn} style="text-align:left" data-index={index2}>
+                                                            <span style="text-align:center;" class="slds-text-heading_small">{data.value}</span>
+                                                        </td>
+                                                    </template>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                 </div>
+                            </template>
+                        </div>
+        
+                    </lightning-tab>
+
+                    <lightning-tab label="Bulk Assign" title="Bulk Assign" value="bulk" onactive={handleActiveTab}>
+                        <div class="slds-m-horizontal_medium" style="min-height: 50vh;">
+                            <div class="slds-grid ">
+                                <div class=" slds-size_12-of-12 slds-p-horizontal_small" style="display: flex;  justify-content: left; gap: 5px;">
+                                    <div style="padding: 10px; width: 30%" >
+                                        <div class="slds-box  neumorphism-card slds-theme_default slds-p-vertical_large slds-m-bottom_small " style="background-color: #f9f9f9;border-radius:10px" >
+                                            <table style="width: auto;">
+                                                <tr>
+                                                    <td style="width: auto;" class="slds-text-heading_medium"><span class="slds-text-color_error">*</span>User</td>
+                                                    <td><lightning-helptext class="slds-p-bottom_medium" content="Assotiated user of the records you want to see."></lightning-helptext></td>
+                                                </tr>
+                                            </table>
+                                            <div class="slds-grid slds-p-top_small" >
+                                                <div class="slds-size_11-of-12 neumorphism-card">
+                                                    <lightning-record-picker
+                                                        label="User"
+                                                        onchange={onUserChangeBulk}
+                                                        object-api-name="User"
+                                                        class="validate-input"
+                                                        variant="label-hidden"
+                                                        >
+                                                    </lightning-record-picker>
+                                                </div>
+                                                <div class="slds-size_1-of-12"></div>   
+                                            </div>
+                                        </div>
+                                    </div>
+                                        <div style="padding: 10px; width: 30%" >
+                                            <div class="slds-box  neumorphism-card slds-theme_default slds-p-vertical_large slds-m-bottom_small " style="background-color: #f9f9f9;border-radius:10px" >
+                                                <table style="width: auto;">
+                                                    <tr>
+                                                        <td style="width: auto;" class="slds-text-heading_medium"><span class="slds-text-color_error">*</span>Object</td>
+                                                        <td><lightning-helptext class="slds-p-bottom_medium" content="Object from which records will come."></lightning-helptext></td>
+                                                    </tr>
+                                                </table>
+                                                <!-- <div class="slds-grid slds-p-top_small slds-p-bottom_small" >
+                                                    <div class="slds-size_11-of-12 neumorphism-card">
+                                                        <lightning-combobox
+                                                            name="sObjectDropdown"
+                                                            label="Select an Account"
+                                                            variant="label-hidden"
+                                                            placeholder="Select Objects"
+                                                            options={objectOptions}
+                                                            onchange={bulkObjectSelect}>
+                                                        </lightning-combobox>
+                                                    </div>
+                                                    <div class="slds-size_1-of-12"></div>   
+                                                </div> -->
+                                                    <div class="slds-pill_container slds-m-top_small">
+                                                        <ul class="slds-listbox slds-listbox_horizontal" role="listbox" aria-label="Selected Options:" aria-orientation="horizontal" aria-describedby="listbox-pill-with-icon">
+                                                            <template for:each={objectOptions} for:item="pill" for:index="index">
+                                                              <li key={pill} class="slds-listbox-item" style="margin: 3px;" role="presentation">
+                                                                  <span class="slds-pill" role="option" tabindex="0" aria-selected="true">
+                                                                  <span class="slds-icon_container slds-icon-standard-account slds-pill__icon_container" title="Account">
+                                                                      <lightning-icon icon-name="standard:sobject_collection" size="small" alternative-text="icon" ></lightning-icon> 
+                                                                      <span class="slds-assistive-text" >{pill.label}</span>
+                                                                  </span>
+                                                                  <span class="slds-pill__label" title="Full pill label verbiage mirrored here" style="padding-right: 3px;">{pill.label}</span>
+                                                                 
+                                                                  </span>
+                                                                </li>
+                                                            </template>
+                                                        </ul>
+                                                    </div>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="slds-box  neumorphism-card slds-theme_default slds-p-vertical_small slds-m-bottom_small " style=" width:40%;  background-color: #f9f9f9;border-radius:10px" >
+                                            <div style="width:100%">
+                                                <table style="width: auto;">
+                                                    <tr>
+                                                        <td style="width: auto;" class="slds-text-heading_medium"><span class="slds-text-color_error">*</span>Assign To</td>
+                                                        <td><lightning-helptext class="slds-p-bottom_medium" content="Select user to assign the selected records."></lightning-helptext></td>
+                                                    </tr>
+                                                </table>
+                                                <div class=" slds-p-top_small" style="display: flex; gap:2px; justify-content: left;">
+                                                    <lightning-record-picker data-index={index} style="width: 60%"
+                                                        label="Assign to User"
+                                                        onchange={onAssigneeUserChangeBulk}
+                                                        object-api-name="User"
+                                                        filter={activeUserFilter}
+                                                        class="validate-input neumorphism-card"
+                                                        value = {assigneeUserId}
+                                                        variant="label-hidden"
+                                                    >
+                                                    </lightning-record-picker>
+                                                    <template if:true={showBulkAssignButton}>
+                                                        <div class="slds-m-left_small" >
+                                                            <lightning-button variant="brand" label="Change Bulk Owner" onclick={handleOwnerChangeBulk}></lightning-button>
+                                                        </div>
+                                                    </template>
+                                                    
+                                                </div>
+                                                
+                                            </div>
+                                            
+                                        </div>
+                                </div>
+                            </div>
+                        </div>
+                    </lightning-tab>
+                    
+                    <!-- TAB Assign records to user !-->
+                    <template if:true={showAssignToUserTab}>
+                        <lightning-tab label="Assign to user" title="2nd tab extended title" value="assign-to-user" onactive={handleActiveTab}>
+                            <div class="slds-m-horizontal_medium">
+                            <div class="slds-grid ">
+                                <div class="slds-size_12-of-12 slds-p-horizontal_small" style="display: flex; gap: 5px;">
+                                    
+                                    
+                                    
+                                    <div class="slds-box  neumorphism-card slds-theme_default slds-m-vertical_small slds-m-bottom_small " style=" width: 40%; padding-top:10px;  background-color: #f9f9f9;border-radius:10px" >
+                                        <div style="width:100%">
+                                            <table style="width: auto;">
+                                                <tr>
+                                                    <td style="width: auto;" class="slds-text-heading_medium"><span class="slds-text-color_error">*</span>Assign To</td>
+                                                    <td><lightning-helptext class="slds-p-bottom_medium" content="Select user to assign the selected records."></lightning-helptext></td>
+                                                </tr>
+                                            </table>
+                                            <div class=" slds-p-top_small" style="display: flex; gap:2px; justify-content: left;">
+                                                <lightning-record-picker data-index={index} style="width: 60%"
+                                                    label="Assign to User"
+                                                    onchange={onAssigneeUserChange}
+                                                    object-api-name="User"
+                                                    filter={activeUserFilter}
+                                                    class="validate-input neumorphism-card"
+                                                    value = {assigneeUserId}
+                                                    variant="label-hidden"
+                                                >
+                                                </lightning-record-picker>
+                                                <template if:true={showAssignButton}>
+                                                    <div class="slds-m-left_small" >
+                                                        <lightning-button variant="brand" label="Change Owner" onclick={handleOwnerChange}></lightning-button>
+                                                    </div>
+                                                </template>
+                                                
+                                            </div>
+                                            
+                                        </div>
+                                        
+                                    </div>
+                                    <!-- <div style="padding-top: 41px;">
+                                        <lightning-button variant="brand" label="Change Owner" onclick={handleOwnerChange}></lightning-button>
+                                    </div> -->
+                                </div>
+                            </div>
+                            </div>
+                        </lightning-tab>
+                    </template>
+                </lightning-tabset>
+            </div>
+
+
+        </div>
+
+    </div>
+
+    <template if:true={isLoading}>
+        <div>
+            <lightning-spinner alternative-text="Loading" size="large" variant="brand"></lightning-spinner>
+        </div>
+    </template>
+</template>

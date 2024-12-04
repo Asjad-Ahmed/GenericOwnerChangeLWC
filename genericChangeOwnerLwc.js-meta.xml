@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+********************************************************************************************
+* Link: 
+* Development Start Date / File created Date: 05.10.2024
+* Lead developer Email: deepak@cccinfotech.com
+* Pre-Deployment Steps: None
+* Post-Deployment Steps: add custom tab Assign Owner to the app or give access to the Profiles.
+* Branch Name in GitHub: 
+* Datamigration Job in AutoRabit: 
+* MODIFICATION LOG:
+* ASJAD AHMED 05.10.2024 Initial version of the metadata file for the component bundle
+-->
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>61.0</apiVersion>
+    <isExposed>true</isExposed>
+    <targets>
+		<target>lightning__Tab</target>
+	</targets>
+</LightningComponentBundle>
